@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { audit } from "@/lib/audit";
+import { UnreachableError } from "@/lib/audit/errors";
 import { AuditInputSchema } from "@/lib/audit/schema";
 import { getSession } from "@/lib/session";
 
@@ -48,6 +49,12 @@ export async function POST(request: Request) {
 		});
 		return Response.json(report);
 	} catch (err) {
+		if (err instanceof UnreachableError) {
+			return Response.json(
+				{ error: "unreachable", host: err.host, reason: err.reason },
+				{ status: 502 },
+			);
+		}
 		console.error("[audit] engine failed", err);
 		return Response.json({ error: "audit_failed" }, { status: 500 });
 	}

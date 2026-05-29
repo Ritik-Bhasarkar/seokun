@@ -174,11 +174,28 @@ export function HomeScreen() {
 				});
 				if (!res.ok) {
 					const detail = await res.json().catch(() => null);
-					throw new Error(
-						detail?.error === "validation_error"
-							? "That URL doesn't look right."
-							: "The audit failed. Try again.",
-					);
+					if (detail?.error === "validation_error") {
+						throw new Error("That URL doesn't look right.");
+					}
+					if (detail?.error === "unreachable") {
+						const host = String(detail.host ?? "that domain");
+						const reason: string = detail.reason ?? "network";
+						const why =
+							reason === "dns"
+								? "no DNS record"
+								: reason === "refused"
+									? "connection refused"
+									: reason === "timeout"
+										? "no response in time"
+										: "network error";
+						throw new Error(`Couldn't reach ${host} (${why}). Check the URL.`);
+					}
+					if (detail?.error === "session_required_for_source_checks") {
+						throw new Error(
+							"Connect GitHub first to audit a repo.",
+						);
+					}
+					throw new Error("The audit failed. Try again.");
 				}
 				const report = (await res.json()) as AuditReport;
 				saveReport(report);
@@ -222,10 +239,14 @@ export function HomeScreen() {
 
 					<UrlInput
 						value={url}
-						onChange={setUrl}
+						onChange={(next) => {
+							setUrl(next);
+							if (auditError) setAuditError(null);
+						}}
 						onSubmit={runAudit}
 						loading={loading}
 						autoFocus
+						error={auditError !== null}
 					/>
 
 					<div

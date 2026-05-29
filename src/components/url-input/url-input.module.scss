@@ -1,0 +1,50 @@
+.url-input {
+	width: 100%;
+	max-width: 620px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: var(--r-lg);
+	padding: 6px 6px 6px 16px;
+	transition:
+		border-color 0.15s,
+		background 0.15s;
+
+	&:focus-within {
+		border-color: var(--border-strong);
+		background: var(--bg-elev-2);
+	}
+
+	&--error {
+		border-color: color-mix(in oklch, var(--red, #f87171) 60%, var(--border));
+	}
+
+	&--error:focus-within {
+		border-color: var(--red, #f87171);
+	}
+
+	&__prefix {
+		font-family: var(--mono);
+		font-size: 14px;
+		color: var(--fg-dim);
+		user-select: none;
+	}
+
+	&__field {
+		flex: 1;
+		border: none;
+		background: transparent;
+		color: var(--fg);
+		font-family: var(--mono);
+		font-size: 14px;
+		padding: 12px 4px;
+		outline: none;
+		min-width: 0;
+
+		&::placeholder {
+			color: var(--fg-dim);
+		}
+	}
+}
