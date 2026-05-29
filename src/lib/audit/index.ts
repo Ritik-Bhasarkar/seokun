@@ -14,8 +14,9 @@ export type AuditOptions = AuditInput & {
 
 export async function audit(options: AuditOptions): Promise<AuditReport> {
 	const { url, repo, githubToken } = options;
+	const formFactor = options.formFactor ?? "mobile";
 
-	const runtime = await runRuntime(url);
+	const runtime = await runRuntime(url, formFactor);
 
 	let sourceFindings: AuditReport["findings"] = [];
 	if (repo && githubToken) {
@@ -34,11 +35,13 @@ export async function audit(options: AuditOptions): Promise<AuditReport> {
 		id: randomUUID(),
 		url,
 		auditedAt: new Date().toISOString(),
+		formFactor,
 		scores: runtime.scores,
+		metrics: runtime.metrics,
 		findings: [...runtime.findings, ...sourceFindings],
 	};
 
-	// Validate before returning — catches any drift in finding schemas
+	// Validate before returning — catches drift in finding schemas
 	return AuditReportSchema.parse(report);
 }
 
@@ -50,4 +53,6 @@ export type {
 	Scores,
 	Severity,
 	Category,
+	FormFactor,
+	Metric,
 } from "./schema";

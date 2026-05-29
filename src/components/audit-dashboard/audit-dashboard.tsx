@@ -2,8 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import type { AuditReport, Severity } from "@/lib/audit/schema";
-import { formatRelative, loadReport } from "@/lib/audit-storage";
+import type {
+	AuditReport,
+	Category,
+	FormFactor,
+	Severity,
+} from "@/lib/audit/schema";
+import { formatRelative, loadReport, saveReport } from "@/lib/audit-storage";
 import { Button } from "../button/button";
 import { CopyButton } from "../copy-button/copy-button";
 import { FindingRow } from "../finding-row/finding-row";
@@ -15,32 +20,40 @@ import {
 import { ScoreGauge } from "../score-gauge/score-gauge";
 import styles from "./audit-dashboard.module.scss";
 
-type Filter = "all" | Severity;
+const SEVERITY_ORDER: Record<Severity, number> = {
+	critical: 0,
+	warning: 1,
+	info: 2,
+};
 
-const SEVERITY_ORDER: Severity[] = ["critical", "warning", "info"];
+const CATEGORY_ORDER: Array<{ id: Category; name: string; score: keyof AuditReport["scores"] }> = [
+	{ id: "perf", name: "Performance", score: "performance" },
+	{ id: "a11y", name: "Accessibility", score: "accessibility" },
+	{ id: "best-practices", name: "Best Practices", score: "bestPractices" },
+	{ id: "seo", name: "SEO", score: "seo" },
+];
 
-function deltaLabel(value: number): string {
-	if (value < 50) return "needs work";
-	if (value < 80) return "improve";
+function scoreBand(value: number): "good" | "warn" | "bad" {
+	if (value < 50) return "bad";
+	if (value < 90) return "warn";
 	return "good";
 }
 
-function severityDotColor(sev: Severity): string {
-	if (sev === "critical") return "var(--red)";
-	if (sev === "warning") return "var(--amber)";
-	return "var(--accent)";
+function metricBand(score: number | null): "good" | "warn" | "bad" | "unknown" {
+	if (score === null) return "unknown";
+	if (score < 50) return "bad";
+	if (score < 90) return "warn";
+	return "good";
 }
 
-type Props = {
-	id: string;
-};
+type Props = { id: string };
 
 export function AuditDashboard({ id }: Props) {
 	const router = useRouter();
 	const [report, setReport] = useState<AuditReport | null>(null);
 	const [hydrated, setHydrated] = useState(false);
-	const [filter, setFilter] = useState<Filter>("all");
 	const [openId, setOpenId] = useState<string | null>(null);
+	const [switching, setSwitching] = useState<FormFactor | null>(null);
 
 	useEffect(() => {
 		// eslint-disable-next-line react-hooks/set-state-in-effect
@@ -48,30 +61,20 @@ export function AuditDashboard({ id }: Props) {
 		setHydrated(true);
 	}, [id]);
 
-	const counts = useMemo(() => {
-		const out = { all: 0, critical: 0, warning: 0, info: 0 };
-		if (!report) return out;
-		for (const f of report.findings) {
-			out.all += 1;
-			out[f.severity] += 1;
-		}
-		return out;
-	}, [report]);
-
-	const grouped = useMemo(() => {
-		const g: Record<Severity, AuditReport["findings"]> = {
-			critical: [],
-			warning: [],
-			info: [],
+	const groupedByCategory = useMemo(() => {
+		const g: Record<Category, AuditReport["findings"]> = {
+			perf: [],
+			a11y: [],
+			"best-practices": [],
+			seo: [],
 		};
 		if (!report) return g;
-		const items =
-			filter === "all"
-				? report.findings
-				: report.findings.filter((f) => f.severity === filter);
-		for (const f of items) g[f.severity].push(f);
+		for (const f of report.findings) g[f.category].push(f);
+		for (const cat of Object.keys(g) as Category[]) {
+			g[cat].sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+		}
 		return g;
-	}, [report, filter]);
+	}, [report]);
 
 	useEffect(() => {
 		if (report && !openId && report.findings.length > 0) {
@@ -79,6 +82,34 @@ export function AuditDashboard({ id }: Props) {
 			setOpenId(report.findings[0].id);
 		}
 	}, [report, openId]);
+
+	const switchFormFactor = async (target: FormFactor) => {
+		if (!report || switching || target === report.formFactor) return;
+		setSwitching(target);
+		try {
+			const res = await fetch("/api/audit", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ url: report.url, formFactor: target }),
+			});
+			if (!res.ok) throw new Error("audit failed");
+			const next = (await res.json()) as AuditReport;
+			saveReport(next);
+			router.replace(`/audit/${next.id}`);
+		} catch {
+			window.alert("Couldn't re-run for that form factor. Try again.");
+		} finally {
+			setSwitching(null);
+		}
+	};
+
+	const reRun = () => {
+		if (!report) return;
+		const stripped = report.url.replace(/^https?:\/\//, "");
+		router.push(
+			`/?url=${encodeURIComponent(stripped)}&formFactor=${report.formFactor}`,
+		);
+	};
 
 	if (!hydrated) return null;
 
@@ -100,35 +131,13 @@ export function AuditDashboard({ id }: Props) {
 		);
 	}
 
-	const totalIssues = report.findings.length;
-	const scoreItems = [
-		{
-			key: "seo",
-			short: "SEO",
-			name: "SEO",
-			value: report.scores.seo,
-			count: report.findings.filter((f) => f.category === "seo").length,
-		},
-		{
-			key: "performance",
-			short: "Perf",
-			name: "Performance",
-			value: report.scores.performance,
-			count: report.findings.filter((f) => f.category === "perf").length,
-		},
-		{
-			key: "accessibility",
-			short: "A11y",
-			name: "Accessibility",
-			value: report.scores.accessibility,
-			count: report.findings.filter((f) => f.category === "a11y").length,
-		},
-	] as const;
-
 	const json = JSON.stringify(report, null, 2);
-	const reRun = () => {
-		const stripped = report.url.replace(/^https?:\/\//, "");
-		router.push(`/?url=${encodeURIComponent(stripped)}&run=1`);
+	const totalIssues = report.findings.length;
+	const counts: Record<Category, number> = {
+		perf: groupedByCategory.perf.length,
+		a11y: groupedByCategory.a11y.length,
+		"best-practices": groupedByCategory["best-practices"].length,
+		seo: groupedByCategory.seo.length,
 	};
 
 	return (
@@ -146,7 +155,9 @@ export function AuditDashboard({ id }: Props) {
 						<IconClock size={12} />
 						Audited {formatRelative(report.auditedAt)}
 						<span className={styles["audit-dashboard__meta-sep"]}>·</span>
-						<span style={{ fontFamily: "var(--mono)" }}>{report.id.slice(0, 8)}</span>
+						<span className={styles["audit-dashboard__ff-badge"]}>
+							{report.formFactor}
+						</span>
 						<span className={styles["audit-dashboard__meta-sep"]}>·</span>
 						<span>{totalIssues} findings</span>
 					</div>
@@ -159,107 +170,111 @@ export function AuditDashboard({ id }: Props) {
 				</div>
 			</div>
 
+			<div className={styles["audit-dashboard__ff-tabs"]}>
+				{(["mobile", "desktop"] as const).map((ff) => {
+					const active = report.formFactor === ff;
+					const isLoading = switching === ff;
+					return (
+						<button
+							key={ff}
+							type="button"
+							disabled={switching !== null || active}
+							onClick={() => switchFormFactor(ff)}
+							className={[
+								styles["audit-dashboard__ff-tab"],
+								active ? styles["audit-dashboard__ff-tab--active"] : "",
+							]
+								.filter(Boolean)
+								.join(" ")}
+						>
+							{isLoading ? "Running…" : ff === "mobile" ? "Mobile" : "Desktop"}
+						</button>
+					);
+				})}
+			</div>
+
 			<div className={styles["audit-dashboard__score-row"]}>
-				{scoreItems.map((s) => (
-					<div key={s.key} className={styles["audit-dashboard__score-card"]}>
-						<ScoreGauge value={s.value} />
-						<div className={styles["audit-dashboard__score-info"]}>
-							<div className={styles["audit-dashboard__score-label"]}>
-								{s.short}
-							</div>
-							<div className={styles["audit-dashboard__score-name"]}>
-								{s.name}
-							</div>
-							<div className={styles["audit-dashboard__score-issues"]}>
-								<span>
-									{s.count} {s.count === 1 ? "issue" : "issues"}
-								</span>
-								<span className={styles["audit-dashboard__score-delta"]}>
-									{deltaLabel(s.value)}
-								</span>
+				{CATEGORY_ORDER.map((c) => {
+					const value = report.scores[c.score];
+					return (
+						<div key={c.id} className={styles["audit-dashboard__score-card"]}>
+							<ScoreGauge value={value} size={72} />
+							<div className={styles["audit-dashboard__score-info"]}>
+								<div className={styles["audit-dashboard__score-name"]}>
+									{c.name}
+								</div>
+								<div className={styles["audit-dashboard__score-issues"]}>
+									{counts[c.id]}{" "}
+									{counts[c.id] === 1 ? "issue" : "issues"}
+								</div>
 							</div>
 						</div>
-					</div>
-				))}
+					);
+				})}
 			</div>
 
-			<div className={styles["audit-dashboard__section-h"]}>
-				<h2>Findings</h2>
-				<span className={styles["audit-dashboard__section-count"]}>
-					{filter === "all"
-						? totalIssues
-						: report.findings.filter((f) => f.severity === filter).length}{" "}
-					of {totalIssues}
-				</span>
-			</div>
+			{CATEGORY_ORDER.map((c) => {
+				const value = report.scores[c.score];
+				const items = groupedByCategory[c.id];
+				const showMetrics = c.id === "perf" && report.metrics.length > 0;
+				return (
+					<section key={c.id} className={styles["audit-dashboard__category"]}>
+						<div className={styles["audit-dashboard__category-h"]}>
+							<div className={styles["audit-dashboard__category-l"]}>
+								<h2>{c.name}</h2>
+								<span className={styles["audit-dashboard__category-score"]}>
+									{value} / 100 · {scoreBand(value)}
+								</span>
+							</div>
+							<span className={styles["audit-dashboard__category-count"]}>
+								{items.length}{" "}
+								{items.length === 1 ? "finding" : "findings"}
+							</span>
+						</div>
 
-			<div className={styles["audit-dashboard__filter-row"]}>
-				{(["all", "critical", "warning", "info"] as const).map((f) => (
-					<button
-						key={f}
-						type="button"
-						onClick={() => setFilter(f)}
-						className={[
-							styles["audit-dashboard__filter-chip"],
-							filter === f ? styles["audit-dashboard__filter-chip--active"] : "",
-						]
-							.filter(Boolean)
-							.join(" ")}
-					>
-						{f !== "all" && (
-							<span
-								className={styles["audit-dashboard__filter-dot"]}
-								style={{ background: severityDotColor(f as Severity) }}
-							/>
-						)}
-						<span>{f}</span>
-						<span className={styles["audit-dashboard__filter-ct"]}>
-							{counts[f]}
-						</span>
-					</button>
-				))}
-			</div>
-
-			<div>
-				{totalIssues === 0 ? (
-					<div className={styles["audit-dashboard__empty"]}>
-						No findings — looks clean.
-					</div>
-				) : (
-					SEVERITY_ORDER.map((sev) => {
-						const items = grouped[sev];
-						if (items.length === 0) return null;
-						return (
-							<div key={sev} className={styles["audit-dashboard__group"]}>
-								<div className={styles["audit-dashboard__group-h"]}>
-									<span
-										className={styles["audit-dashboard__group-dot"]}
-										style={{ background: severityDotColor(sev) }}
-									/>
-									<h3>{sev}</h3>
-									<span className={styles["audit-dashboard__group-ct"]}>
-										{items.length}
-									</span>
+						{showMetrics && (
+							<>
+								<div className={styles["audit-dashboard__metrics-h"]}>
+									Metrics
 								</div>
-								<div
-									style={{ display: "flex", flexDirection: "column", gap: 8 }}
-								>
-									{items.map((f) => (
-										<FindingRow
-											key={f.id}
-											finding={f}
-											open={openId === f.id}
-											onToggle={() =>
-												setOpenId(openId === f.id ? null : f.id)
-											}
-										/>
+								<div className={styles["audit-dashboard__metrics"]}>
+									{report.metrics.map((m) => (
+										<div
+											key={m.id}
+											className={styles["audit-dashboard__metric-card"]}
+											data-score={metricBand(m.score)}
+										>
+											<div className={styles["audit-dashboard__metric-title"]}>
+												{m.title}
+											</div>
+											<div className={styles["audit-dashboard__metric-value"]}>
+												{m.displayValue}
+											</div>
+										</div>
 									))}
 								</div>
+							</>
+						)}
+
+						{items.length === 0 ? (
+							<div className={styles["audit-dashboard__empty"]}>
+								No findings — looks clean.
 							</div>
-						);
-					})
-				)}
-			</div>
+						) : (
+							<div className={styles["audit-dashboard__findings"]}>
+								{items.map((f) => (
+									<FindingRow
+										key={f.id}
+										finding={f}
+										open={openId === f.id}
+										onToggle={() => setOpenId(openId === f.id ? null : f.id)}
+									/>
+								))}
+							</div>
+						)}
+					</section>
+				);
+			})}
 		</main>
 	);
 }

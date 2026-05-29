@@ -33,8 +33,8 @@ function writeIndex(entries: IndexEntry[]): void {
 }
 
 function averageScore(report: AuditReport): number {
-	const { seo, performance, accessibility } = report.scores;
-	return Math.round((seo + performance + accessibility) / 3);
+	const { seo, performance, accessibility, bestPractices } = report.scores;
+	return Math.round((seo + performance + accessibility + bestPractices) / 4);
 }
 
 export function saveReport(report: AuditReport): void {

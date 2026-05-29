@@ -10,7 +10,7 @@ import { IconGithub } from "../icons/icons";
 import { RecentAudits } from "../recent-audits/recent-audits";
 import { TopNav } from "../top-nav/top-nav";
 import { UrlInput } from "../url-input/url-input";
-import type { AuditReport } from "@/lib/audit/schema";
+import type { AuditReport, FormFactor } from "@/lib/audit/schema";
 import { saveReport } from "@/lib/audit-storage";
 import { RECENT_AUDITS } from "@/lib/mock-data";
 import type { ClaudeConnection, Repo } from "@/lib/types";
@@ -32,6 +32,7 @@ export function HomeScreen() {
 	const [loading, setLoading] = useState(false);
 	const [stepIdx, setStepIdx] = useState(0);
 	const [auditError, setAuditError] = useState<string | null>(null);
+	const [formFactor, setFormFactor] = useState<FormFactor>("mobile");
 	const [repo, setRepo] = useState<Repo | null>(null);
 	const [ghOpen, setGhOpen] = useState(false);
 	const [claudeOpen, setClaudeOpen] = useState(false);
@@ -78,12 +79,20 @@ export function HomeScreen() {
 		if (typeof window === "undefined") return;
 		const params = new URLSearchParams(window.location.search);
 		const urlParam = params.get("url");
+		const ffParam = params.get("formFactor");
 		if (urlParam) {
 			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setUrl(urlParam);
+		}
+		if (ffParam === "desktop" || ffParam === "mobile") {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			setFormFactor(ffParam);
+		}
+		if (urlParam || ffParam) {
 			const cleaned = new URL(window.location.href);
 			cleaned.searchParams.delete("url");
 			cleaned.searchParams.delete("run");
+			cleaned.searchParams.delete("formFactor");
 			window.history.replaceState({}, "", cleaned.toString());
 		}
 	}, []);
@@ -149,8 +158,13 @@ export function HomeScreen() {
 
 		void (async () => {
 			try {
-				const body: { url: string; repo?: { owner: string; name: string } } = {
+				const body: {
+					url: string;
+					formFactor: FormFactor;
+					repo?: { owner: string; name: string };
+				} = {
 					url: fullUrl,
+					formFactor,
 				};
 				if (repo) body.repo = { owner: repo.owner, name: repo.name };
 				const res = await fetch("/api/audit", {
@@ -213,6 +227,43 @@ export function HomeScreen() {
 						loading={loading}
 						autoFocus
 					/>
+
+					<div
+						style={{
+							display: "inline-flex",
+							gap: 4,
+							padding: 3,
+							border: "1px solid var(--border)",
+							borderRadius: 10,
+							background: "var(--bg-elev)",
+							marginTop: 12,
+							alignSelf: "flex-start",
+						}}
+					>
+						{(["mobile", "desktop"] as const).map((ff) => {
+							const active = formFactor === ff;
+							return (
+								<button
+									key={ff}
+									type="button"
+									disabled={loading}
+									onClick={() => setFormFactor(ff)}
+									style={{
+										background: active ? "var(--bg-elev-2)" : "transparent",
+										color: active ? "var(--fg)" : "var(--fg-muted)",
+										border: 0,
+										borderRadius: 7,
+										padding: "5px 12px",
+										fontSize: 12,
+										cursor: loading ? "not-allowed" : "pointer",
+										fontFamily: "inherit",
+									}}
+								>
+									{ff === "mobile" ? "Mobile" : "Desktop"}
+								</button>
+							);
+						})}
+					</div>
 
 					{auditError && (
 						<div

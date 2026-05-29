@@ -43,6 +43,7 @@ export async function POST(request: Request) {
 		const report = await audit({
 			url: input.url,
 			repo: input.repo,
+			formFactor: input.formFactor,
 			githubToken,
 		});
 		return Response.json(report);
