@@ -1,0 +1,48 @@
+.audit-loader {
+	width: 100%;
+	max-width: 620px;
+	margin-top: 24px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-lg);
+	background: var(--bg-elev);
+	padding: 18px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	animation: fade-up 0.35s ease both;
+
+	&__line {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 13px;
+		color: var(--fg-muted);
+		font-family: var(--mono);
+
+		&--done {
+			color: var(--fg);
+		}
+	}
+
+	&__dot {
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		border: 1.5px solid var(--border-strong);
+		display: grid;
+		place-items: center;
+		flex-shrink: 0;
+
+		&--active {
+			border-color: var(--accent);
+			border-top-color: transparent;
+			animation: spin 0.8s linear infinite;
+		}
+
+		&--done {
+			background: var(--accent);
+			border-color: var(--accent);
+			color: #0a0a0b;
+		}
+	}
+}

@@ -1,0 +1,37 @@
+.footer {
+	border-top: 1px solid var(--border);
+	margin-top: auto;
+
+	&__inner {
+		max-width: 1180px;
+		margin: 0 auto;
+		padding: 18px 24px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		color: var(--fg-dim);
+		font-size: 12px;
+	}
+
+	&__right {
+		display: flex;
+		gap: 18px;
+		align-items: center;
+	}
+
+	&__link {
+		color: var(--fg-muted);
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+
+		&:hover {
+			color: var(--fg);
+		}
+	}
+
+	&__version {
+		font-family: var(--mono);
+	}
+}
