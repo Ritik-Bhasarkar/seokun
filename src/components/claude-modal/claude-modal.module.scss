@@ -1,0 +1,135 @@
+.claude-modal__overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.55);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 100;
+}
+
+.claude-modal {
+	width: min(560px, 92vw);
+	background: var(--bg-elev, #14161b);
+	border: 1px solid var(--border, #2a2d36);
+	border-radius: 14px;
+	overflow: hidden;
+	font-family: var(--font-sans);
+	color: var(--fg, #e6e8ee);
+}
+
+.claude-modal__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	border-bottom: 1px solid var(--border, #2a2d36);
+}
+
+.claude-modal__head-l {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.claude-modal__close {
+	background: transparent;
+	border: 0;
+	color: var(--fg-dim, #7a8094);
+	cursor: pointer;
+	padding: 4px;
+}
+
+.claude-modal__body {
+	padding: 20px 22px 22px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.claude-modal__title {
+	font-size: 17px;
+	font-weight: 600;
+	margin: 0;
+}
+
+.claude-modal__p {
+	color: var(--fg-dim, #98a0b3);
+	font-size: 13px;
+	line-height: 1.55;
+	margin: 0;
+}
+
+.claude-modal__error {
+	color: #ff6b6b;
+	font-size: 12px;
+}
+
+.claude-modal__token-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--bg, #0b0d11);
+	border: 1px solid var(--border, #2a2d36);
+	border-radius: 8px;
+	padding: 8px 10px;
+	font-family: var(--font-mono);
+	font-size: 12px;
+}
+
+.claude-modal__token-value {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.claude-modal__tabs {
+	display: flex;
+	gap: 4px;
+	border-bottom: 1px solid var(--border, #2a2d36);
+}
+
+.claude-modal__tab {
+	background: transparent;
+	border: 0;
+	color: var(--fg-dim, #98a0b3);
+	padding: 8px 12px;
+	font-size: 12px;
+	cursor: pointer;
+	border-bottom: 2px solid transparent;
+}
+
+.claude-modal__tab--active {
+	color: var(--fg, #e6e8ee);
+	border-bottom-color: var(--accent, #4f8cff);
+}
+
+.claude-modal__snippet {
+	background: var(--bg, #0b0d11);
+	border: 1px solid var(--border, #2a2d36);
+	border-radius: 8px;
+	padding: 12px;
+	font-family: var(--font-mono);
+	font-size: 11.5px;
+	line-height: 1.55;
+	overflow-x: auto;
+	white-space: pre;
+}
+
+.claude-modal__foot {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 8px;
+}
+
+.claude-modal__btn-mini {
+	background: transparent;
+	border: 1px solid var(--border, #2a2d36);
+	color: var(--fg-dim, #98a0b3);
+	border-radius: 6px;
+	font-size: 11px;
+	padding: 4px 8px;
+	cursor: pointer;
+}
