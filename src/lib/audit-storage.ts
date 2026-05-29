@@ -1,6 +1,7 @@
 "use client";
 
 import type { AuditReport } from "./audit/schema";
+import { AuditReportSchema } from "./audit/schema";
 
 const REPORT_PREFIX = "seokun:audit:";
 const INDEX_KEY = "seokun:audit:index";
@@ -66,7 +67,14 @@ export function loadReport(id: string): AuditReport | null {
 	try {
 		const raw = window.localStorage.getItem(REPORT_PREFIX + id);
 		if (!raw) return null;
-		return JSON.parse(raw) as AuditReport;
+		const parsed = AuditReportSchema.safeParse(JSON.parse(raw));
+		if (!parsed.success) {
+			// Stale shape — clear it so the dashboard's "not found" state kicks in
+			// and the user re-runs against the current schema.
+			window.localStorage.removeItem(REPORT_PREFIX + id);
+			return null;
+		}
+		return parsed.data;
 	} catch {
 		return null;
 	}

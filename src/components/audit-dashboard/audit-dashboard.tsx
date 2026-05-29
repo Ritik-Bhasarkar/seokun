@@ -216,7 +216,8 @@ export function AuditDashboard({ id }: Props) {
 			{CATEGORY_ORDER.map((c) => {
 				const value = report.scores[c.score];
 				const items = groupedByCategory[c.id];
-				const showMetrics = c.id === "perf" && report.metrics.length > 0;
+				const showMetrics =
+					c.id === "perf" && (report.metrics?.length ?? 0) > 0;
 				return (
 					<section key={c.id} className={styles["audit-dashboard__category"]}>
 						<div className={styles["audit-dashboard__category-h"]}>
