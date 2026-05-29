@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { AuditLoader } from "../audit-loader/audit-loader";
 import { Footer } from "../footer/footer";
+import { ClaudeModal } from "../claude-modal/claude-modal";
 import { GithubModal } from "../github-modal/github-modal";
 import { IconGithub } from "../icons/icons";
 import { RecentAudits } from "../recent-audits/recent-audits";
 import { TopNav } from "../top-nav/top-nav";
 import { UrlInput } from "../url-input/url-input";
 import { RECENT_AUDITS } from "@/lib/mock-data";
-import type { Repo } from "@/lib/types";
+import type { ClaudeConnection, Repo } from "@/lib/types";
 import styles from "./home-screen.module.scss";
 
 const STEPS = [
@@ -20,6 +21,7 @@ const STEPS = [
 ];
 
 const REPO_STORAGE_KEY = "seokun:repo";
+const CLAUDE_STORAGE_KEY = "seokun:claude";
 
 export function HomeScreen() {
 	const [url, setUrl] = useState("");
@@ -27,6 +29,8 @@ export function HomeScreen() {
 	const [stepIdx, setStepIdx] = useState(0);
 	const [repo, setRepo] = useState<Repo | null>(null);
 	const [ghOpen, setGhOpen] = useState(false);
+	const [claudeOpen, setClaudeOpen] = useState(false);
+	const [claudeConn, setClaudeConn] = useState<ClaudeConnection | null>(null);
 
 	useEffect(() => {
 		try {
@@ -38,6 +42,32 @@ export function HomeScreen() {
 			// ignore — invalid stored repo state
 		}
 	}, []);
+
+	useEffect(() => {
+		try {
+			const raw = window.localStorage.getItem(CLAUDE_STORAGE_KEY);
+			// Rehydrating persisted Claude connection from localStorage.
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			if (raw) setClaudeConn(JSON.parse(raw) as ClaudeConnection);
+		} catch {
+			// ignore — invalid stored claude state
+		}
+	}, []);
+
+	useEffect(() => {
+		try {
+			if (claudeConn) {
+				window.localStorage.setItem(
+					CLAUDE_STORAGE_KEY,
+					JSON.stringify(claudeConn),
+				);
+			} else {
+				window.localStorage.removeItem(CLAUDE_STORAGE_KEY);
+			}
+		} catch {
+			// ignore — storage may be unavailable
+		}
+	}, [claudeConn]);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
@@ -104,9 +134,7 @@ export function HomeScreen() {
 			<TopNav
 				repo={repo}
 				onConnectRepo={() => setGhOpen(true)}
-				onConnectClaude={() => {
-					/* navigation to /connect lives elsewhere */
-				}}
+				onConnectClaude={() => setClaudeOpen(true)}
 			/>
 
 			<main className={styles["home-screen__page"]}>
@@ -186,6 +214,21 @@ export function HomeScreen() {
 				onDisconnect={() => {
 					setRepo(null);
 					setGhOpen(false);
+				}}
+			/>
+
+			<ClaudeModal
+				open={claudeOpen}
+				connection={claudeConn}
+				hasGithubSession={repo !== null}
+				onClose={() => setClaudeOpen(false)}
+				onConnect={(conn) => {
+					setClaudeConn(conn);
+				}}
+				onDisconnect={() => setClaudeConn(null)}
+				onGoConnectGithub={() => {
+					setClaudeOpen(false);
+					setGhOpen(true);
 				}}
 			/>
 		</div>
