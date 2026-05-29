@@ -1,0 +1,49 @@
+.severity-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	padding: 3px 9px 3px 8px;
+	font-family: var(--mono, "JetBrains Mono", monospace);
+	font-size: 11px;
+	font-weight: 500;
+	letter-spacing: -0.005em;
+	text-transform: lowercase;
+}
+
+.severity-badge__dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 99px;
+}
+
+.severity-badge--critical {
+	background: var(--red-soft, color-mix(in oklch, #f87171 14%, transparent));
+	color: var(--red, #f87171);
+	border-color: color-mix(in oklch, var(--red, #f87171) 22%, transparent);
+}
+
+.severity-badge--critical .severity-badge__dot {
+	background: var(--red, #f87171);
+}
+
+.severity-badge--warning {
+	background: var(--amber-soft, color-mix(in oklch, #fbbf24 14%, transparent));
+	color: var(--amber, #fbbf24);
+	border-color: color-mix(in oklch, var(--amber, #fbbf24) 22%, transparent);
+}
+
+.severity-badge--warning .severity-badge__dot {
+	background: var(--amber, #fbbf24);
+}
+
+.severity-badge--info {
+	background: var(--accent-soft, color-mix(in oklch, #60a5fa 14%, transparent));
+	color: var(--accent, #60a5fa);
+	border-color: color-mix(in oklch, var(--accent, #60a5fa) 22%, transparent);
+}
+
+.severity-badge--info .severity-badge__dot {
+	background: var(--accent, #60a5fa);
+}

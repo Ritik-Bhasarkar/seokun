@@ -1,0 +1,126 @@
+.finding-row {
+	background: var(--bg-elev, #131316);
+	border: 1px solid var(--border, #26262e);
+	border-radius: 12px;
+	transition: border-color 0.15s;
+	overflow: hidden;
+}
+
+.finding-row:hover {
+	border-color: var(--border-strong, #32323c);
+}
+
+.finding-row__head {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 18px;
+	background: transparent;
+	border: 0;
+	cursor: pointer;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+}
+
+.finding-row__head:hover {
+	background: rgba(255, 255, 255, 0.015);
+}
+
+.finding-row__title {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.finding-row__t {
+	font-size: 13.5px;
+	font-weight: 500;
+	color: var(--fg, #e8e8ec);
+}
+
+.finding-row__snippet {
+	font-family: var(--mono, "JetBrains Mono", monospace);
+	font-size: 11.5px;
+	color: var(--fg-muted, #a1a1a8);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.finding-row__chev {
+	color: var(--fg-dim, #6b6b75);
+	transition: transform 0.15s, color 0.15s;
+	flex-shrink: 0;
+}
+
+.finding-row--open .finding-row__chev {
+	transform: rotate(90deg);
+	color: var(--fg-muted, #a1a1a8);
+}
+
+.finding-row__body {
+	padding: 0 18px 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.finding-row__body-section + .finding-row__body-section {
+	padding-top: 0;
+}
+
+.finding-row__body-label {
+	font-size: 10.5px;
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	color: var(--fg-dim, #6b6b75);
+	margin: 0 0 8px;
+}
+
+.finding-row__body p {
+	color: var(--fg-muted, #a1a1a8);
+	font-size: 13px;
+	line-height: 1.55;
+	margin: 0;
+}
+
+.finding-row__fix {
+	background: var(--bg, #0a0a0b);
+	border: 1px solid var(--border, #26262e);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.finding-row__fix-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--border, #26262e);
+	background: var(--bg-elev, #131316);
+}
+
+.finding-row__fix-name {
+	font-family: var(--mono, "JetBrains Mono", monospace);
+	font-size: 11.5px;
+	color: var(--fg-muted, #a1a1a8);
+}
+
+.finding-row__fix-code {
+	margin: 0;
+	padding: 12px 14px;
+	font-family: var(--mono, "JetBrains Mono", monospace);
+	font-size: 12px;
+	line-height: 1.55;
+	color: var(--fg, #e8e8ec);
+	white-space: pre;
+	overflow-x: auto;
+}

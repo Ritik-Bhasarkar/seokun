@@ -1,0 +1,24 @@
+.copy-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	background: transparent;
+	border: 1px solid var(--border, #26262e);
+	border-radius: 6px;
+	color: var(--fg-muted, #a1a1a8);
+	font-size: 11.5px;
+	padding: 4px 8px;
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+	font-family: inherit;
+}
+
+.copy-button:hover {
+	color: var(--fg, #e8e8ec);
+	border-color: var(--border-strong, #32323c);
+}
+
+.copy-button--copied {
+	color: var(--green, #4ade80);
+	border-color: color-mix(in oklch, var(--green, #4ade80) 30%, transparent);
+}

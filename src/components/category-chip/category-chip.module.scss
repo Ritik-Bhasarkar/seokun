@@ -1,0 +1,15 @@
+.category-chip {
+	display: inline-flex;
+	align-items: center;
+	height: 22px;
+	padding: 0 8px;
+	border-radius: 6px;
+	background: var(--bg-elev-2, #191920);
+	border: 1px solid var(--border, #26262e);
+	color: var(--fg-muted, #a1a1a8);
+	font-family: var(--mono, "JetBrains Mono", monospace);
+	font-size: 10.5px;
+	font-weight: 500;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}

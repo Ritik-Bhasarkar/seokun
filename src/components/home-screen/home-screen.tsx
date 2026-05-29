@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { AuditLoader } from "../audit-loader/audit-loader";
 import { Footer } from "../footer/footer";
+import { useRouter } from "next/navigation";
 import { ClaudeModal } from "../claude-modal/claude-modal";
 import { GithubModal } from "../github-modal/github-modal";
 import { IconGithub } from "../icons/icons";
 import { RecentAudits } from "../recent-audits/recent-audits";
 import { TopNav } from "../top-nav/top-nav";
 import { UrlInput } from "../url-input/url-input";
+import type { AuditReport } from "@/lib/audit/schema";
+import { saveReport } from "@/lib/audit-storage";
 import { RECENT_AUDITS } from "@/lib/mock-data";
 import type { ClaudeConnection, Repo } from "@/lib/types";
 import styles from "./home-screen.module.scss";
@@ -24,9 +27,11 @@ const REPO_STORAGE_KEY = "seokun:repo";
 const CLAUDE_STORAGE_KEY = "seokun:claude";
 
 export function HomeScreen() {
+	const router = useRouter();
 	const [url, setUrl] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [stepIdx, setStepIdx] = useState(0);
+	const [auditError, setAuditError] = useState<string | null>(null);
 	const [repo, setRepo] = useState<Repo | null>(null);
 	const [ghOpen, setGhOpen] = useState(false);
 	const [claudeOpen, setClaudeOpen] = useState(false);
@@ -72,6 +77,20 @@ export function HomeScreen() {
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		const params = new URLSearchParams(window.location.search);
+		const urlParam = params.get("url");
+		if (urlParam) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			setUrl(urlParam);
+			const cleaned = new URL(window.location.href);
+			cleaned.searchParams.delete("url");
+			cleaned.searchParams.delete("run");
+			window.history.replaceState({}, "", cleaned.toString());
+		}
+	}, []);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const params = new URLSearchParams(window.location.search);
 		const gh = params.get("gh");
 		if (!gh) return;
 
@@ -109,24 +128,57 @@ export function HomeScreen() {
 	}, [repo]);
 
 	const runAudit = () => {
-		if (loading || !url.trim()) return;
+		const trimmed = url.trim();
+		if (loading || !trimmed) return;
+		const fullUrl = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+
 		setLoading(true);
 		setStepIdx(0);
+		setAuditError(null);
 
+		// Cycle through the loader steps while the real request runs.
 		let i = 0;
 		const tick = () => {
 			i += 1;
 			if (i < STEPS.length) {
 				setStepIdx(i);
 				window.setTimeout(tick, 650);
-			} else {
-				window.setTimeout(() => {
-					setLoading(false);
-					setStepIdx(0);
-				}, 500);
 			}
 		};
-		window.setTimeout(tick, 650);
+		const ticker = window.setTimeout(tick, 650);
+
+		void (async () => {
+			try {
+				const body: { url: string; repo?: { owner: string; name: string } } = {
+					url: fullUrl,
+				};
+				if (repo) body.repo = { owner: repo.owner, name: repo.name };
+				const res = await fetch("/api/audit", {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify(body),
+				});
+				if (!res.ok) {
+					const detail = await res.json().catch(() => null);
+					throw new Error(
+						detail?.error === "validation_error"
+							? "That URL doesn't look right."
+							: "The audit failed. Try again.",
+					);
+				}
+				const report = (await res.json()) as AuditReport;
+				saveReport(report);
+				window.clearTimeout(ticker);
+				router.push(`/audit/${report.id}`);
+			} catch (err) {
+				window.clearTimeout(ticker);
+				setLoading(false);
+				setStepIdx(0);
+				setAuditError(
+					err instanceof Error ? err.message : "The audit failed. Try again.",
+				);
+			}
+		})();
 	};
 
 	return (
@@ -161,6 +213,18 @@ export function HomeScreen() {
 						loading={loading}
 						autoFocus
 					/>
+
+					{auditError && (
+						<div
+							style={{
+								color: "var(--red)",
+								fontSize: 12.5,
+								marginTop: 10,
+							}}
+						>
+							{auditError}
+						</div>
+					)}
 
 					<div className={styles["home-screen__hint"]}>
 						{repo ? (
