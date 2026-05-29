@@ -6,6 +6,7 @@ const Schema = z.object({
   GITHUB_CLIENT_SECRET: z.string().min(1),
   SESSION_SECRET: z.string().min(32),
   APP_URL: z.string().url(),
+  MCP_TOKEN_SECRET: z.string().min(32),
 });
 
 export type Env = z.infer<typeof Schema>;

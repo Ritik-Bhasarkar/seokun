@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@octokit/oauth-app": "^8.0.3",
     "@octokit/rest": "^22.0.1",
     "iron-session": "^8.0.4",

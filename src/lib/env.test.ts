@@ -10,6 +10,7 @@ describe("parseEnv", () => {
     GITHUB_CLIENT_SECRET: "secret",
     SESSION_SECRET: "x".repeat(32),
     APP_URL: "http://localhost:3000",
+    MCP_TOKEN_SECRET: "y".repeat(32),
   };
 
   it("parses a valid env", () => {
@@ -26,5 +27,9 @@ describe("parseEnv", () => {
 
   it("throws when APP_URL is not a valid URL", () => {
     expect(() => parseEnv({ ...good, APP_URL: "not-a-url" })).toThrow();
+  });
+
+  it("throws when MCP_TOKEN_SECRET is too short", () => {
+    expect(() => parseEnv({ ...good, MCP_TOKEN_SECRET: "short" })).toThrow();
   });
 });
