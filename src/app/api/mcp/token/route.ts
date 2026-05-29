@@ -11,3 +11,9 @@ export async function POST() {
   const mcpUrl = new URL("/api/mcp", env.APP_URL).toString();
   return Response.json({ token, mcpUrl });
 }
+
+export async function DELETE() {
+  // v1: tokens are stateless, so revocation is UI-only. The token remains
+  // valid until MCP_TOKEN_SECRET rotates. Documented in the modal.
+  return new Response(null, { status: 204 });
+}

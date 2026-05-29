@@ -19,7 +19,7 @@ vi.mock("@/lib/env", () => ({
   },
 }));
 
-import { POST } from "./route";
+import { DELETE, POST } from "./route";
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -46,5 +46,12 @@ describe("POST /api/mcp/token", () => {
       mcpUrl: "http://localhost:3000/api/mcp",
     });
     expect(mintMcpToken).toHaveBeenCalledWith({ uid: "octocat" });
+  });
+});
+
+describe("DELETE /api/mcp/token", () => {
+  it("returns 204 unconditionally", async () => {
+    const res = await DELETE();
+    expect(res.status).toBe(204);
   });
 });
