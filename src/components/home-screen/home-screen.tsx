@@ -40,6 +40,33 @@ export function HomeScreen() {
 	}, []);
 
 	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const params = new URLSearchParams(window.location.search);
+		const gh = params.get("gh");
+		if (!gh) return;
+
+		if (gh === "connected") {
+			// Opening modal in response to OAuth callback redirect
+			// eslint-disable-next-line react-hooks/set-state-in-effect
+			setGhOpen(true);
+		} else if (gh === "error") {
+			const reason = params.get("reason");
+			const messages: Record<string, string> = {
+				denied: "GitHub authorization was cancelled.",
+				state: "Authorization state mismatch. Please try again.",
+				exchange: "Couldn't exchange the GitHub code. Please try again.",
+				scope: "Required scope (repo) was not granted.",
+			};
+			window.alert(messages[reason ?? ""] ?? "GitHub authorization failed.");
+		}
+
+		const url = new URL(window.location.href);
+		url.searchParams.delete("gh");
+		url.searchParams.delete("reason");
+		window.history.replaceState({}, "", url.toString());
+	}, []);
+
+	useEffect(() => {
 		try {
 			if (repo) {
 				window.localStorage.setItem(REPO_STORAGE_KEY, JSON.stringify(repo));
@@ -150,6 +177,7 @@ export function HomeScreen() {
 			<GithubModal
 				open={ghOpen}
 				repo={repo}
+				initialStep={ghOpen && !repo ? "list" : undefined}
 				onClose={() => setGhOpen(false)}
 				onConfirm={(r) => {
 					setRepo(r);
