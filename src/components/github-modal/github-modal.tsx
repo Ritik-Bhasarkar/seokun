@@ -46,6 +46,9 @@ export function GithubModal({
 
 	useEffect(() => {
 		if (!open) return;
+		// Resetting modal-local state when the modal (re)opens — the
+		// "external system" here is the parent's open/repo/initialStep props.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setStep(initialStep ?? (repo ? "manage" : "auth"));
 		setSelected(null);
 		setBranch(repo?.branch ?? "main");
@@ -74,12 +77,16 @@ export function GithubModal({
 
 	useEffect(() => {
 		if (open && step === "list" && repos === null && reposError === null) {
+			// Initial data fetch on entering "list" step — setState happens inside loadRepos.
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			void loadRepos();
 		}
 	}, [open, step, repos, reposError, loadRepos]);
 
 	useEffect(() => {
 		if (!open || step !== "confirm" || !selected) return;
+		// Branches fetch on entering "confirm" step with a selected repo.
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setBranches(null);
 		setBranchesError(null);
 		void (async () => {
