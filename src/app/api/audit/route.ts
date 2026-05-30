@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { audit } from "@/lib/audit";
+import { recordAudit } from "@/lib/audit-store";
 import { UnreachableError } from "@/lib/audit/errors";
 import { AuditInputSchema } from "@/lib/audit/schema";
 import { getSession } from "@/lib/session";
@@ -27,10 +28,11 @@ export async function POST(request: Request) {
 		return Response.json({ error: "validation_error" }, { status: 400 });
 	}
 
+	const session = await getSession();
+
 	// Auth only required when a repo is involved — source checks need a token
 	let githubToken: string | undefined;
 	if (input.repo) {
-		const session = await getSession();
 		if (!session) {
 			return Response.json(
 				{ error: "session_required_for_source_checks" },
@@ -47,6 +49,9 @@ export async function POST(request: Request) {
 			formFactor: input.formFactor,
 			githubToken,
 		});
+		if (session) {
+			recordAudit(session.login, input, report);
+		}
 		return Response.json(report);
 	} catch (err) {
 		if (err instanceof UnreachableError) {
