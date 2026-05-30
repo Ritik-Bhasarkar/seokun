@@ -1,10 +1,16 @@
 import "server-only";
 import { Octokit } from "@octokit/rest";
 import type { Finding } from "../schema";
+import { checkDivAsButton } from "./div-as-button";
 import { checkEmptyLink } from "./empty-link";
+import { checkHeadingHierarchy } from "./heading-hierarchy";
+import { checkIconButtonLabel } from "./icon-button-label";
+import { checkInputWithoutLabel } from "./input-without-label";
 import { checkMissingMetadata } from "./missing-metadata";
 import { checkNextImageAlt } from "./next-image-alt";
 import { checkRawImgAlt } from "./raw-img-alt";
+import { checkSyncHeavyImports } from "./sync-heavy-imports";
+import { checkTargetBlankRel } from "./target-blank-rel";
 
 const MAX_FILES = 30;
 const EXCLUDE = ["node_modules/", "dist/", ".next/", "build/", ".turbo/"];
@@ -59,6 +65,12 @@ const SOURCE_CHECKS: Array<(filePath: string, code: string) => Finding[]> = [
 	checkMissingMetadata,
 	checkEmptyLink,
 	checkNextImageAlt,
+	checkIconButtonLabel,
+	checkInputWithoutLabel,
+	checkDivAsButton,
+	checkTargetBlankRel,
+	checkHeadingHierarchy,
+	checkSyncHeavyImports,
 ];
 
 export async function runSourceChecks(input: {

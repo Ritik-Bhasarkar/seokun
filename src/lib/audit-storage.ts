@@ -9,8 +9,8 @@ const INDEX_LIMIT = 20;
 
 type IndexEntry = {
 	id: string;
-	url: string;
-	score: number;
+	url: string | null;
+	score: number | null;
 	auditedAt: string;
 };
 
@@ -33,9 +33,15 @@ function writeIndex(entries: IndexEntry[]): void {
 	}
 }
 
-function averageScore(report: AuditReport): number {
-	const { seo, performance, accessibility, bestPractices } = report.scores;
-	return Math.round((seo + performance + accessibility + bestPractices) / 4);
+function averageScore(report: AuditReport): number | null {
+	const values = [
+		report.scores.seo,
+		report.scores.performance,
+		report.scores.accessibility,
+		report.scores.bestPractices,
+	].filter((v): v is number => typeof v === "number");
+	if (values.length === 0) return null;
+	return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
 export function saveReport(report: AuditReport): void {

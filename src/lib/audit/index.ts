@@ -5,6 +5,7 @@ import {
 	type AuditInput,
 	type AuditReport,
 	AuditReportSchema,
+	type Scores,
 } from "./schema";
 import { runSourceChecks } from "./source";
 
@@ -12,11 +13,28 @@ export type AuditOptions = AuditInput & {
 	githubToken?: string;
 };
 
+const NULL_SCORES: Scores = {
+	seo: null,
+	performance: null,
+	accessibility: null,
+	bestPractices: null,
+};
+
 export async function audit(options: AuditOptions): Promise<AuditReport> {
 	const { url, repo, githubToken } = options;
-	const formFactor = options.formFactor ?? "mobile";
 
-	const runtime = await runRuntime(url, formFactor);
+	let scores: Scores = NULL_SCORES;
+	let metrics: AuditReport["metrics"] = [];
+	let runtimeFindings: AuditReport["findings"] = [];
+	let formFactor: AuditReport["formFactor"];
+
+	if (url) {
+		formFactor = options.formFactor ?? "mobile";
+		const runtime = await runRuntime(url, formFactor);
+		scores = runtime.scores;
+		metrics = runtime.metrics;
+		runtimeFindings = runtime.findings;
+	}
 
 	let sourceFindings: AuditReport["findings"] = [];
 	if (repo && githubToken) {
@@ -33,12 +51,12 @@ export async function audit(options: AuditOptions): Promise<AuditReport> {
 
 	const report: AuditReport = {
 		id: randomUUID(),
-		url,
+		url: url ?? null,
 		auditedAt: new Date().toISOString(),
 		formFactor,
-		scores: runtime.scores,
-		metrics: runtime.metrics,
-		findings: [...runtime.findings, ...sourceFindings],
+		scores,
+		metrics,
+		findings: [...runtimeFindings, ...sourceFindings],
 	};
 
 	// Validate before returning — catches drift in finding schemas

@@ -19,11 +19,14 @@ export const FindingSchema = z.object({
 	fixHint: z.string().optional(),
 });
 
+// Scores are nullable per category — a source-only audit has no Lighthouse
+// to compute perf/a11y/best-practices/seo scores, so each is allowed to be null
+// and the dashboard renders "—".
 export const ScoresSchema = z.object({
-	seo: z.number().min(0).max(100),
-	performance: z.number().min(0).max(100),
-	accessibility: z.number().min(0).max(100),
-	bestPractices: z.number().min(0).max(100),
+	seo: z.number().min(0).max(100).nullable(),
+	performance: z.number().min(0).max(100).nullable(),
+	accessibility: z.number().min(0).max(100).nullable(),
+	bestPractices: z.number().min(0).max(100).nullable(),
 });
 
 export const MetricSchema = z.object({
@@ -33,26 +36,33 @@ export const MetricSchema = z.object({
 	score: z.number().min(0).max(100).nullable(),
 });
 
+// formFactor is optional on the report — for repo-only audits there's no
+// browser emulation. URL audits always include it.
 export const AuditReportSchema = z.object({
 	id: z.string().min(1),
-	url: z.string().url(),
+	url: z.string().url().nullable(),
 	auditedAt: z.string().datetime(),
-	formFactor: FormFactorSchema,
+	formFactor: FormFactorSchema.optional(),
 	scores: ScoresSchema,
 	metrics: z.array(MetricSchema),
 	findings: z.array(FindingSchema),
 });
 
-export const AuditInputSchema = z.object({
-	url: z.string().url(),
-	formFactor: FormFactorSchema.optional(),
-	repo: z
-		.object({
-			owner: z.string().min(1),
-			name: z.string().min(1),
-		})
-		.optional(),
-});
+export const AuditInputSchema = z
+	.object({
+		url: z.string().url().optional(),
+		formFactor: FormFactorSchema.optional(),
+		repo: z
+			.object({
+				owner: z.string().min(1),
+				name: z.string().min(1),
+			})
+			.optional(),
+	})
+	.refine((v) => Boolean(v.url) || Boolean(v.repo), {
+		message: "Either url or repo is required",
+		path: ["url"],
+	});
 
 export type Severity = z.infer<typeof SeveritySchema>;
 export type Category = z.infer<typeof CategorySchema>;

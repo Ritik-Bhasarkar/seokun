@@ -105,10 +105,14 @@ export function AuditDashboard({ id }: Props) {
 
 	const reRun = () => {
 		if (!report) return;
+		if (!report.url) {
+			// Repo-only audit — nothing URL-side to re-run.
+			router.push("/");
+			return;
+		}
 		const stripped = report.url.replace(/^https?:\/\//, "");
-		router.push(
-			`/?url=${encodeURIComponent(stripped)}&formFactor=${report.formFactor}`,
-		);
+		const ff = report.formFactor ? `&formFactor=${report.formFactor}` : "";
+		router.push(`/?url=${encodeURIComponent(stripped)}${ff}`);
 	};
 
 	if (!hydrated) return null;
@@ -149,15 +153,21 @@ export function AuditDashboard({ id }: Props) {
 							Audit
 						</button>
 						<IconChevronRight size={12} stroke={2} />
-						<span className={styles["audit-dashboard__url"]}>{report.url}</span>
+						<span className={styles["audit-dashboard__url"]}>
+							{report.url ?? "repo audit"}
+						</span>
 					</div>
 					<div className={styles["audit-dashboard__meta"]}>
 						<IconClock size={12} />
 						Audited {formatRelative(report.auditedAt)}
-						<span className={styles["audit-dashboard__meta-sep"]}>·</span>
-						<span className={styles["audit-dashboard__ff-badge"]}>
-							{report.formFactor}
-						</span>
+						{report.formFactor && (
+							<>
+								<span className={styles["audit-dashboard__meta-sep"]}>·</span>
+								<span className={styles["audit-dashboard__ff-badge"]}>
+									{report.formFactor}
+								</span>
+							</>
+						)}
 						<span className={styles["audit-dashboard__meta-sep"]}>·</span>
 						<span>{totalIssues} findings</span>
 					</div>
@@ -170,35 +180,54 @@ export function AuditDashboard({ id }: Props) {
 				</div>
 			</div>
 
-			<div className={styles["audit-dashboard__ff-tabs"]}>
-				{(["mobile", "desktop"] as const).map((ff) => {
-					const active = report.formFactor === ff;
-					const isLoading = switching === ff;
-					return (
-						<button
-							key={ff}
-							type="button"
-							disabled={switching !== null || active}
-							onClick={() => switchFormFactor(ff)}
-							className={[
-								styles["audit-dashboard__ff-tab"],
-								active ? styles["audit-dashboard__ff-tab--active"] : "",
-							]
-								.filter(Boolean)
-								.join(" ")}
-						>
-							{isLoading ? "Running…" : ff === "mobile" ? "Mobile" : "Desktop"}
-						</button>
-					);
-				})}
-			</div>
+			{report.url && (
+				<div className={styles["audit-dashboard__ff-tabs"]}>
+					{(["mobile", "desktop"] as const).map((ff) => {
+						const active = report.formFactor === ff;
+						const isLoading = switching === ff;
+						return (
+							<button
+								key={ff}
+								type="button"
+								disabled={switching !== null || active}
+								onClick={() => switchFormFactor(ff)}
+								className={[
+									styles["audit-dashboard__ff-tab"],
+									active ? styles["audit-dashboard__ff-tab--active"] : "",
+								]
+									.filter(Boolean)
+									.join(" ")}
+							>
+								{isLoading ? "Running…" : ff === "mobile" ? "Mobile" : "Desktop"}
+							</button>
+						);
+					})}
+				</div>
+			)}
 
 			<div className={styles["audit-dashboard__score-row"]}>
 				{CATEGORY_ORDER.map((c) => {
 					const value = report.scores[c.score];
 					return (
 						<div key={c.id} className={styles["audit-dashboard__score-card"]}>
-							<ScoreGauge value={value} size={72} />
+							{value === null ? (
+								<div
+									style={{
+										width: 72,
+										height: 72,
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										fontFamily: "var(--mono)",
+										fontSize: 26,
+										color: "var(--fg-dim)",
+									}}
+								>
+									—
+								</div>
+							) : (
+								<ScoreGauge value={value} size={72} />
+							)}
 							<div className={styles["audit-dashboard__score-info"]}>
 								<div className={styles["audit-dashboard__score-name"]}>
 									{c.name}
@@ -224,7 +253,7 @@ export function AuditDashboard({ id }: Props) {
 							<div className={styles["audit-dashboard__category-l"]}>
 								<h2>{c.name}</h2>
 								<span className={styles["audit-dashboard__category-score"]}>
-									{value} / 100 · {scoreBand(value)}
+									{value === null ? "not scored" : `${value} / 100 · ${scoreBand(value)}`}
 								</span>
 							</div>
 							<span className={styles["audit-dashboard__category-count"]}>
