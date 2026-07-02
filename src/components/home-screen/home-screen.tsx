@@ -85,7 +85,6 @@ export function HomeScreen() {
 			setUrl(urlParam);
 		}
 		if (ffParam === "desktop" || ffParam === "mobile") {
-			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setFormFactor(ffParam);
 		}
 		if (urlParam || ffParam) {
