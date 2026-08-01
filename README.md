@@ -23,6 +23,13 @@ The project is currently a prototype. Browser-visible reports are stored in
 `localStorage`, and the server-side audit/MCP store is an in-memory map, so
 data is not durable across browsers, deployments, or process restarts.
 
+## Product preview
+
+The home screen is designed around a quick URL audit, with mobile and desktop
+form-factor selection and entry points for GitHub and Claude integrations.
+
+![seokun home screen](public/images/main-page.png)
+
 ## Requirements
 
 - Node.js 20 or newer
@@ -107,6 +114,12 @@ The OAuth flow is implemented by these routes:
 7. The combined report is schema-validated and returned to the browser.
 8. The browser stores the report locally and navigates to `/audit/:id`.
 
+The audit dashboard groups findings by category, shows Lighthouse scores and
+performance metrics, and provides recommendations and fix hints for individual
+findings.
+
+![seokun audit dashboard](public/images/audit-page.png)
+
 Example request:
 
 ```bash
@@ -138,6 +151,8 @@ GitHub session and return `401` when one is missing; unreachable hosts return
 After connecting GitHub, choose **Connect Claude** in the top navigation and
 generate a connection token. The UI provides configuration for Claude Desktop
 and Claude Code.
+
+![Claude MCP connection modal](public/images/mcp-modal.png)
 
 The MCP endpoint is:
 
